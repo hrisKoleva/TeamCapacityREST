@@ -26,60 +26,42 @@ namespace TeamCapacityREST
     {
         static void Main(string[] args)
         {
-
-            HttpClient client = new HttpClient();
-
-            //This is code that tests the connection, I can print workitems but seems I'm not authorized to execute the request, 
-            //so I don't know what's the problem
-            TfsTeamProjectCollection tfs = TfsTeamProjectCollectionFactory.GetTeamProjectCollection(new Uri("http://ptfs.partner.master.int:8080/tfs/Simulation"));
-
-            ReadOnlyCollection<CatalogNode> collectionNodes =
-                tfs.ConfigurationServer.CatalogNode.QueryChildren(new[] { CatalogResourceTypes.ProjectCollection }, false,
-                    CatalogQueryOptions.None);
-
-            foreach (CatalogNode collectionNode in collectionNodes)
-            {
-                Guid collectionId = new Guid(collectionNode.Resource.Properties["InstanceId"]);
-
-                TfsTeamProjectCollection teamProjectCollection =
-                    tfs.ConfigurationServer.GetTeamProjectCollection(collectionId);
-
-                  WorkItemStore workItemStore = (WorkItemStore)teamProjectCollection.GetService(typeof(WorkItemStore));
-
-
-                WorkItemCollection exceptions = workItemStore.Query(
-                    "Select [ID], [Title],  [Assigned To]" +
-                    "From WorkItems " +
-                    "Where [Work Item Type] = 'Bug' AND  [Created Date] = @Today");
-
-                foreach (WorkItem item in exceptions)
-                {
-                    Console.WriteLine(item.Id + "\t" + item.Title);
-                }
-            }
-
-            //my request.... 
             
-            var x =  client.GetAsync("http://ptfs.partner.master.int:8080/tfs/Simulation/Nemo/Sputnik/_apis/work/TeamSettings/Iterations/4529/Capacity?api-version= 2.0-preview.1");  // Blocking call!
-           
-            HttpResponseMessage response = x.Result;
+            /*//http://ptfs.partner.master.int:8080/tfs/Simulation/Nemo/Sputnik/_apis/work/TeamSettings/Iterations/4529/Capacity?api-version= 2.0-preview.1*/
 
-            if (response.IsSuccessStatusCode)
+            var username = "username";
+            var password = "password";
+
+
+                   using (HttpClient client = new HttpClient())
             {
-                
-                var dataObjects = response.Content.ReadAsAsync<IEnumerable<DataObject>>().Result;
-                foreach (var d in dataObjects)
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(System.Text.ASCIIEncoding.ASCII.GetBytes(string.Format("{0}:{1}", username, password))));
+
+
+                using (HttpResponseMessage response = client.GetAsync("http://ptfs.partner.master.int:8080/tfs/Simulation/Nemo/Sputnik/_apis/work/TeamSettings/Iterations/4529/Capacity?api-version= 2.0-preview.1").Result)
                 {
-                    Console.WriteLine("Sputnik Iteration 163 capacity is {0}", d.Hours);
-                }
-            }
-            else
-            {
-                Console.WriteLine("\n !!! {0} ({1})", (int)response.StatusCode, response.ReasonPhrase);
-                              
-            }
+                    if (response.IsSuccessStatusCode)
+                    {
 
-            Console.ReadLine();
+                        var dataObjects = response.Content.ReadAsAsync<IEnumerable<DataObject>>().Result;
+                        foreach (var d in dataObjects)
+                        {
+                            Console.WriteLine("Sputnik Iteration 163 capacity is {0}", d.Name);
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("\n !!! {0} ({1})", (int)response.StatusCode, response.ReasonPhrase);
+
+                    }
+
+                    Console.ReadLine();
+                }
+                   
+            }
+               
         }
     }
 }
