@@ -11,45 +11,60 @@ using System.Text;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using System.Threading.Tasks;
 
 namespace TeamCapacityREST
 {
-
-    public class DataObject
+    public class Values
     {
-        public string Name { get; set; }
-        public int Hours { get; set; }
+        public List<TeamMember> teamMemberList { get; set; }
+        public List<Activities> activitiesList { get; set; }
+    }
+
+    public class TeamMember
+    {
+        private string id { get; set; }
+        private string displayName { get; set; }
+        private DateTime[] daysOff { get; set; }
 
     }
+
+    public class Activities
+    {
+        public int capacityPerDay { get; set; }
+        public string name { get; set; }
+    }
+
 
     public class Program
     {
         static void Main(string[] args)
         {
-            
-            /*//http://ptfs.partner.master.int:8080/tfs/Simulation/Nemo/Sputnik/_apis/work/TeamSettings/Iterations/4529/Capacity?api-version= 2.0-preview.1*/
-
-            var username = "username";
-            var password = "password";
+            //http://ptfs.partner.master.int:8080/tfs/Simulation/Nemo/Sputnik/_apis/work/TeamSettings/Iterations/bf3a9219-0758-41a3-865b-d3d4f74c0239/Capacities?api-version=2.0-preview.1
 
 
-                   using (HttpClient client = new HttpClient())
+            HttpClientHandler authHandler = new HttpClientHandler()
             {
+                UseDefaultCredentials = true
+
+            };
+
+            using (HttpClient client = new HttpClient(authHandler))
+            {
+                client.BaseAddress = new Uri("http://ptfs.partner.master.int:8080/tfs/Simulation/Nemo/");
+                client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(System.Text.ASCIIEncoding.ASCII.GetBytes(string.Format("{0}:{1}", username, password))));
 
-
-                using (HttpResponseMessage response = client.GetAsync("http://ptfs.partner.master.int:8080/tfs/Simulation/Nemo/Sputnik/_apis/work/TeamSettings/Iterations/4529/Capacity?api-version= 2.0-preview.1").Result)
+                using (HttpResponseMessage response = client.GetAsync("Sputnik/_apis/work/TeamSettings/Iterations/bf3a9219-0758-41a3-865b-d3d4f74c0239/Capacities?api-version=2.0-preview.1").Result)
                 {
                     if (response.IsSuccessStatusCode)
                     {
-
-                        var dataObjects = response.Content.ReadAsAsync<IEnumerable<DataObject>>().Result;
-                        foreach (var d in dataObjects)
-                        {
-                            Console.WriteLine("Sputnik Iteration 163 capacity is {0}", d.Name);
-                        }
+                        //I don't know how to read the response :-( 
+                        TeamMember teamMemmbers = response.Content.ReadAsAsync<TeamMember>().Result;
+                        Console.WriteLine(teamMemmbers);
                     }
                     else
                     {
@@ -59,9 +74,8 @@ namespace TeamCapacityREST
 
                     Console.ReadLine();
                 }
-                   
+
             }
-               
         }
     }
 }
